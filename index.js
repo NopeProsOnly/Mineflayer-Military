@@ -80,14 +80,13 @@ function makeBot (_u, ix) {
             bot.on('physicsTick', () => {
                 if (bot.pvp.target) return
                 if (bot.pathfinder.isMoving()) return
-              
-                const entity = bot.nearestEntity()
-                if (entity) bot.lookAt(entity.position.offset(0, entity.height, 0))
+                //look at nearest entity for flavor
+                if (bot.nearestEntity()) bot.lookAt(bot.nearestEntity().position.offset(0, bot.nearestEntity().height, 0))
             if (!guardPos) return
-                const filter = e => e.type === 'mob' && e.position.distanceTo(bot.entity.position) < 16 && e.mobtype !== 'ArmorStand'
-                const entity1 = bot.nearestEntity(filter)
-                if(entity1) {
-                    bot.pvp.attack(entity1)
+                const filter = e => (e.type === 'mob' || e.type === 'hostile') && e.position.distanceTo(bot.entity.position) < 16 && e.displayName !== 'Armor Stand' && e.displayName !== 'Item'
+                const entity = bot.nearestEntity(filter)
+                if(entity) {
+                    bot.pvp.attack(entity)
                 }
             })
 
