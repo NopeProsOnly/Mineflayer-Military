@@ -6,6 +6,18 @@ const Movements = require('mineflayer-pathfinder').Movements
 const goals = require('mineflayer-pathfinder').goals
 const armorManager = require('mineflayer-armor-manager')
 const pvp = require('mineflayer-pvp').plugin
+const autoeat = require('mineflayer-auto-eat').plugin
+const bloodhound = require('mineflayer-bloodhound')(mineflayer)
+const vec3 = require('vec3')
+const blames = [
+    "That's not fair, I lagged",
+    "Darn it, I miss clicked",
+    "You cheated!",
+    "You just have a better computer",
+    "My sensitivity was just too high",
+    "My mouse disconnected",
+    "I want a rematch"
+]
 const readFile = (fileName) => util.promisify(fs.readFile)(fileName, 'utf8')
 
 const config = {
@@ -14,7 +26,7 @@ const config = {
     host: 'localhost',
     //port: the port of the server you want the bots to connect to
     //they will usually be 25565 by default
-    port: 58114,
+    port: 25565,
     //file: ./filename with account names. Make sure that you have the
     //names on seperate lines.
     file: './accounts.txt',
@@ -22,7 +34,7 @@ const config = {
     //used to prevent joining servers too quickly
     interval: 500
 }
-
+const accounts = []
 function makeBot (_u, ix) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -36,14 +48,33 @@ function makeBot (_u, ix) {
             bot.loadPlugin(pathfinder)
             bot.loadPlugin(pvp)
             bot.loadPlugin(armorManager)
+            bot.loadPlugin(autoeat)
+            bloodhound(bot)
+            bot.bloodhound.yaw_correlation_enabled = true
 
-            bot.on('spawn', () => resolve(bot))
+
+            bot.on('spawn', () => {
+                resolve(bot)
+                accounts.push(bot.username)
+            })
             //bot actions go below this line
+            
+            bot.on('onCorrelateAttack', function(attacker) {
+                if(attacker.type === 'player' && !accounts.includes(attacker.username)) {
+                    bot.pvp.attack(bot.players[attacker.username].entity)
+                }
+            })
+
+
+            bot.on('death', () => {
+                const random = Math.floor(Math.random() * blames.length);
+                bot.chat(blames[random]);
+            })
             
             //this makes the bot equip sword and shields
             bot.on('playerCollect', (collector, itemDrop) => {
                 if(collector !== bot.entity) return
-
+                //equip shield and sword
                 setTimeout(() => {
                     const sword = bot.inventory.items().find(item=> item.name.includes('sword'))
                     if (sword) bot.equip(sword, 'hand')
@@ -83,6 +114,7 @@ function makeBot (_u, ix) {
                 //look at nearest entity for flavor
                 if (bot.nearestEntity()) bot.lookAt(bot.nearestEntity().position.offset(0, bot.nearestEntity().height, 0))
             if (!guardPos) return
+                //attack nearest entity
                 const filter = e => (e.type === 'mob' || e.type === 'hostile') && e.position.distanceTo(bot.entity.position) < 16 && e.displayName !== 'Armor Stand' && e.displayName !== 'Item'
                 const entity = bot.nearestEntity(filter)
                 if(entity) {
@@ -100,17 +132,26 @@ function makeBot (_u, ix) {
                     bot.chat('I will guard that position')
                     guardArea(player.entity.position)
                 }
-                if (message === `${bot.username} fight me`) {
+                if (message === `fight me`) {
                     const player = bot.players[username]
                     if(!player) {
-                        bot.chat('I can\'t find you')
                         return
                     }
-                    bot.chat('Prepeare to die!')
                     bot.pvp.attack(player.entity)
                 }
                 if (message === 'stop'){
                     stopGuarding()
+                }
+                if (message === 'equip'){
+                    setTimeout(() => {
+                        const sword = bot.inventory.items().find(item=> item.name.includes('sword'))
+                        if (sword) bot.equip(sword, 'hand')
+                    }, 150)
+                    setTimeout(() => {
+                        const shield = bot.inventory.items().find(item => item.name.includes('shield'))
+                        if (shield) bot.equip(shield, 'off-hand')
+                    }, 250)
+                    bot.armorManager.equipAll()
                 }
             })
             //bot actions go above this line
