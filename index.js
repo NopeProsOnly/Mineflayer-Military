@@ -35,12 +35,9 @@ const config = {
     interval: 500
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 let lastPot = Date.now()
 const accounts = []
-async function makeBot (_u, ix) {
+function makeBot (_u, ix) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             const bot = mineflayer.createBot({
@@ -61,7 +58,6 @@ async function makeBot (_u, ix) {
             bot.on('spawn', () => {
                 resolve(bot)
                 accounts.push(bot.username)
-                bot.inventory.requiresConfirmation = false
             })
             //bot actions go below this line
             
@@ -130,7 +126,7 @@ async function makeBot (_u, ix) {
                 }
             })
 
-            bot.on('move', async () => {
+            bot.on('move', () => {
                 const block = bot.blockAt(bot.entity.position)
                 const previousItem = bot.heldItem
                 const splashPotion = bot.inventory.items().filter(item => item.name === 'splash_potion')
@@ -149,10 +145,9 @@ async function makeBot (_u, ix) {
                     if(!bot.player.entity.effects['1'] && (Date.now() - lastPot) > 3000) {
                         if (speed) {
                             lastPot = Date.now()
-                            bot.equip(speed, 'hand')
-                            bot.lookAt(bot.entity.position.offset(0,2,0),true).then(async () => {
-                                await sleep(50).then(() => {
-                                    bot.activateItem()
+                            bot.equip(speed, 'hand', () => {
+                                bot.lookAt(bot.entity.position.offset(0,2,0),true, () => {
+                                    setTimeout(() => bot.activateItem(), 50)
                                 })
                             })
                             if (previousItem) {
@@ -198,6 +193,7 @@ async function makeBot (_u, ix) {
             //bot actions go above this line
             bot.on('error', console.log)
             bot.on('kicked', console.log)
+            bot.on('end', console.log)
         }, config.interval * ix)
     })
 }
