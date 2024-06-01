@@ -145,7 +145,7 @@ function makeBot (_u, ix) {
                     if(!bot.player.entity.effects['1'] && (Date.now() - lastPot) > 3000) {
                         if (speed) {
                             lastPot = Date.now()
-                            bot.equip(speed, 'hand', () => {
+                            bot.equip(speed, 'hand', () => { //Problems with this line not running
                                 bot.lookAt(bot.entity.position.offset(0,2,0),true, () => {
                                     setTimeout(() => bot.activateItem(), 50)
                                 })
