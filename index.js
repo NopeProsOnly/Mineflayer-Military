@@ -34,8 +34,13 @@ const config = {
     //used to prevent joining servers too quickly
     interval: 500
 }
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+let lastPot = Date.now()
 const accounts = []
-function makeBot (_u, ix) {
+async function makeBot (_u, ix) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             const bot = mineflayer.createBot({
@@ -56,6 +61,7 @@ function makeBot (_u, ix) {
             bot.on('spawn', () => {
                 resolve(bot)
                 accounts.push(bot.username)
+                bot.inventory.requiresConfirmation = false
             })
             //bot actions go below this line
             
@@ -112,14 +118,49 @@ function makeBot (_u, ix) {
                 if (bot.pvp.target) return
                 if (bot.pathfinder.isMoving()) return
                 //look at nearest entity for flavor
-                if (bot.nearestEntity()) bot.lookAt(bot.nearestEntity().position.offset(0, bot.nearestEntity().height, 0))
-            if (!guardPos) return
+                if (bot.blockAt(bot.entity.position).name !== 'cobweb' || bot.player.entity.effects['1']) {
+                    if (bot.nearestEntity()) bot.lookAt(bot.nearestEntity().position.offset(0, bot.nearestEntity().height, 0))
+                }
+                if (!guardPos) return
                 //attack nearest entity
                 const filter = e => (e.type === 'mob' || e.type === 'hostile') && e.position.distanceTo(bot.entity.position) < 16 && e.displayName !== 'Armor Stand' && e.displayName !== 'Item'
                 const entity = bot.nearestEntity(filter)
                 if(entity) {
                     bot.pvp.attack(entity)
                 }
+            })
+
+            bot.on('move', async () => {
+                const block = bot.blockAt(bot.entity.position)
+                const previousItem = bot.heldItem
+                const splashPotion = bot.inventory.items().filter(item => item.name === 'splash_potion')
+                const order = ['strong', 'long', 'regular']
+                splashPotion.sort((a, b) => {
+                    const aType = a.nbt.value.Potion ? a.nbt.value.Potion.value : ''
+                    const bType = b.nbt.value.Potion ? b.nbt.value.Potion.value : ''
+
+                    const aOrder = order.find(o => aType.includes(o)) || 'regular'
+                    const bOrder = order.find(o => bType.includes(o)) || 'regular'
+
+                    return order.indexOf(aOrder) - order.indexOf(bOrder);
+                })
+                const speed = splashPotion.find(item => item.nbt.value.Potion.value.includes("swiftness"))
+                if (block && block.name === 'cobweb') {
+                    if(!bot.player.entity.effects['1'] && (Date.now() - lastPot) > 3000) {
+                        if (speed) {
+                            lastPot = Date.now()
+                            bot.equip(speed, 'hand')
+                            bot.lookAt(bot.entity.position.offset(0,2,0),true).then(async () => {
+                                await sleep(50).then(() => {
+                                    bot.activateItem()
+                                })
+                            })
+                            if (previousItem) {
+                                bot.equip(previousItem.type, 'hand')
+                            }
+                        }
+                    }
+                }               
             })
 
             bot.on('chat', (username, message) => {
