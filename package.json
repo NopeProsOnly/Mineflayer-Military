@@ -1,6 +1,6 @@
 {
   "name": "mineflayer-military",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Minecraft Bots that defend you against any threat",
   "main": "index.js",
   "scripts": {
@@ -33,5 +33,6 @@
     "mineflayer-bloodhound": "^0.0.2",
     "mineflayer-pathfinder": "^2.4.5",
     "mineflayer-pvp": "^1.3.2"
-  }
+  },
+  "devDependencies": {}
 }

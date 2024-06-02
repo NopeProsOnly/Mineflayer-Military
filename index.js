@@ -19,7 +19,7 @@ const blames = [
     "I want a rematch"
 ]
 const readFile = (fileName) => util.promisify(fs.readFile)(fileName, 'utf8')
-
+console.warn = () => {}
 const config = {
     //host: ip address of server you want the bots to connect to 
     //or localhost for a server or world hosted on the local machine
@@ -140,13 +140,13 @@ function makeBot (_u, ix) {
 
                     return order.indexOf(aOrder) - order.indexOf(bOrder);
                 })
-                
+
                 const speed = splashPotion.find(item => item.nbt && item.nbt.value.Potion && item.nbt.value.Potion.value.includes("swiftness"));
                 if (bot.pvp.target) {
                     var preTarget = bot.pvp.target
+                    //Using var here because it lets me access it outside of scope
                 }
                 if (block && block.name === 'cobweb') {
-                    console.log('cobweb')
                     if(!bot.player.entity.effects['1'] && (Date.now() - lastPot) > 3000) {
                         if (speed) {
                             bot.pvp.forceStop()
@@ -160,7 +160,6 @@ function makeBot (_u, ix) {
                                         bot.equip(previousItem.type, 'hand')
                                     }
                                     bot.pvp.attack(preTarget)
-                                    console.log(preTarget)
                                 }, 450)
                             }, 500)
                         }
@@ -169,9 +168,9 @@ function makeBot (_u, ix) {
             })
 
             bot.on('chat', (username, message) => {
-                if (message === 'target') {
-                    if (bot.pvp.target) {
-                        console.log(bot.pvp.target.username)
+                if (message === 'block') {
+                    if (bot.blockAt(bot.entity.position)) {
+                        console.log(bot.blockAt(bot.entity.position).name)
                     }
                 }
                 if (message === `${bot.username} guard`) {
