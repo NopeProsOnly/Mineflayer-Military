@@ -140,25 +140,40 @@ function makeBot (_u, ix) {
 
                     return order.indexOf(aOrder) - order.indexOf(bOrder);
                 })
-                const speed = splashPotion.find(item => item.nbt.value.Potion.value.includes("swiftness"))
+                
+                const speed = splashPotion.find(item => item.nbt && item.nbt.value.Potion && item.nbt.value.Potion.value.includes("swiftness"));
+                if (bot.pvp.target) {
+                    var preTarget = bot.pvp.target
+                }
                 if (block && block.name === 'cobweb') {
+                    console.log('cobweb')
                     if(!bot.player.entity.effects['1'] && (Date.now() - lastPot) > 3000) {
                         if (speed) {
+                            bot.pvp.forceStop()
                             lastPot = Date.now()
-                            bot.equip(speed, 'hand', () => { //Problems with this line not running
-                                bot.lookAt(bot.entity.position.offset(0,2,0),true, () => {
-                                    setTimeout(() => bot.activateItem(), 50)
-                                })
-                            })
-                            if (previousItem) {
-                                bot.equip(previousItem.type, 'hand')
-                            }
+                            bot.equip(speed, 'hand')
+                            bot.lookAt(bot.entity.position.offset(0,2,0),true)
+                            setTimeout(() => {
+                                bot.activateItem()
+                                setTimeout(() => {
+                                    if (previousItem) {
+                                        bot.equip(previousItem.type, 'hand')
+                                    }
+                                    bot.pvp.attack(preTarget)
+                                    console.log(preTarget)
+                                }, 450)
+                            }, 500)
                         }
                     }
                 }               
             })
 
             bot.on('chat', (username, message) => {
+                if (message === 'target') {
+                    if (bot.pvp.target) {
+                        console.log(bot.pvp.target.username)
+                    }
+                }
                 if (message === `${bot.username} guard`) {
                     const player = bot.players[username]
                     if (!player) {
