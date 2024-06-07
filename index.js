@@ -9,6 +9,8 @@ const pvp = require('mineflayer-pvp').plugin
 const autoeat = require('mineflayer-auto-eat').plugin
 const bloodhound = require('mineflayer-bloodhound')(mineflayer)
 const vec3 = require('vec3')
+const mineflayerViewer = require('prismarine-viewer').mineflayer
+
 const blames = [
     "That's not fair, I lagged",
     "Darn it, I miss clicked",
@@ -18,6 +20,9 @@ const blames = [
     "My mouse disconnected",
     "I want a rematch"
 ]
+
+const owner = 'NopeProsOnly'
+
 const readFile = (fileName) => util.promisify(fs.readFile)(fileName, 'utf8')
 console.warn = () => {}
 const config = {
@@ -36,6 +41,7 @@ const config = {
 }
 
 let lastPot = Date.now()
+let lastFire = Date.now()
 const accounts = []
 function makeBot (_u, ix) {
     return new Promise((resolve, reject) => {
@@ -58,10 +64,17 @@ function makeBot (_u, ix) {
             bot.on('spawn', () => {
                 resolve(bot)
                 accounts.push(bot.username)
+                mineflayerViewer(bot, { port: 3000 })
+                setTimeout(() => {
+                    bot.chat('/register Kaden9ss Kaden9ss')
+                    setTimeout(() => {
+                        bot.chat('/login Kaden9ss')
+                    }, 5000)
+                }, 5000)
             })
             //bot actions go below this line
-            
-            bot.on('onCorrelateAttack', function(attacker) {
+
+            bot.on('onCorrelateAttack', (attacker) => {
                 if(attacker.type === 'player' && !accounts.includes(attacker.username)) {
                     bot.pvp.attack(bot.players[attacker.username].entity)
                 }
@@ -109,8 +122,55 @@ function makeBot (_u, ix) {
                     moveToGuardPos()
                 }
             })
+            /* bot.on('blockUpdate', async (oldBlock, newBlock) => {
+                if (newBlock.name === 'fire') {
+                    if (newBlock.position.distanceTo(bot.entity.position) <= 6) {
+                        try {
+                            await bot.dig(bot.blockAt(newBlock.position))
+                        } catch (e) {}
+                    }
+                }
+            })*/
             //attacking mobs in a 16 radius of the position
             bot.on('physicsTick', () => {
+                //should I handle lava here too?
+                const previousItem = bot.heldItem
+                const splashPotion = bot.inventory.items().filter(item => item.name === 'splash_potion')
+                const order = ['strong', 'long', 'regular']
+                splashPotion.sort((a, b) => {
+                    const aType = a.nbt.value.Potion ? a.nbt.value.Potion.value : ''
+                    const bType = b.nbt.value.Potion ? b.nbt.value.Potion.value : ''
+
+                    const aOrder = order.find(o => aType.includes(o)) || 'regular'
+                    const bOrder = order.find(o => bType.includes(o)) || 'regular'
+
+                    return order.indexOf(aOrder) - order.indexOf(bOrder);
+                })
+                const fire = splashPotion.find(item => item.nbt && item.nbt.value.Potion && item.nbt.value.Potion.value.includes("fire"));
+                if (bot.pvp.target) {
+                    var preTarget = bot.pvp.target
+                    //Using var here because it lets me access it outside of scope
+                }
+                if (!!(bot.entity.metadata[0] & 0x01)) { //if bot is on fire
+                    if(!bot.player.entity.effects['12'] && (Date.now() - lastPot) > 3000) {//if bot does not have fire resistance then
+                        if (fire) {
+                            bot.pvp.forceStop()
+                            lastPot = Date.now()
+                            bot.equip(fire, 'hand')
+                            bot.lookAt(bot.entity.position.offset(0,0,0),true)
+                            setTimeout(() => {
+                                bot.activateItem()
+                                setTimeout(() => {
+                                    if (previousItem && previousItem !== fire) {
+                                        bot.equip(previousItem.type, 'hand')
+                                    }
+                                    bot.pvp.attack(preTarget)
+                                }, 450)
+                            }, 500) //has to be higher than 500 for some reason
+                        }
+                    }
+                }
+
                 if (bot.pvp.target) return
                 if (bot.pathfinder.isMoving()) return
                 //look at nearest entity for flavor
@@ -127,6 +187,18 @@ function makeBot (_u, ix) {
             })
 
             bot.on('move', () => {
+                fire = bot.findBlocks({
+                    matching: [bot.registry.blocksByName['fire'].id],
+                    maxDistance: 6,
+                })
+                if (fire.length !== 0 && (Date.now() - lastFire) > 1000) {
+                    console.log(Date.now() - lastFire)
+                    fire.forEach((element) => {
+                        bot.dig(bot.blockAt(element)) //sometimes errors???
+                        lastFire = Date.now()
+                    })
+                }
+
                 const block = bot.blockAt(bot.entity.position)
                 const previousItem = bot.heldItem
                 const splashPotion = bot.inventory.items().filter(item => item.name === 'splash_potion')
@@ -156,7 +228,7 @@ function makeBot (_u, ix) {
                             setTimeout(() => {
                                 bot.activateItem()
                                 setTimeout(() => {
-                                    if (previousItem) {
+                                    if (previousItem && previousItem !== speed) {
                                         bot.equip(previousItem.type, 'hand')
                                     }
                                     bot.pvp.attack(preTarget)
@@ -168,6 +240,8 @@ function makeBot (_u, ix) {
             })
 
             bot.on('chat', (username, message) => {
+                console.log(username + ': ' + message)
+                if (username !== owner) return 
                 if (message === 'block') {
                     if (bot.blockAt(bot.entity.position)) {
                         console.log(bot.blockAt(bot.entity.position).name)
