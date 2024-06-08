@@ -183,7 +183,6 @@ function makeBot (_u, ix) {
                     maxDistance: 6,
                 })
                 if (fire.length !== 0){
-                    console.log(Date.now() - lastFire)
                     fire.forEach((element) => {
                         bot.dig(bot.blockAt(element)).catch()
                     })
