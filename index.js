@@ -41,7 +41,6 @@ const config = {
 }
 
 let lastPot = Date.now()
-let lastFire = Date.now()
 const accounts = []
 function makeBot (_u, ix) {
     return new Promise((resolve, reject) => {
@@ -191,10 +190,10 @@ function makeBot (_u, ix) {
                     matching: [bot.registry.blocksByName['fire'].id],
                     maxDistance: 6,
                 })
-                if (fire.length !== 0 && (Date.now() - lastFire) > 1000) {
+                if (fire.length !== 0){
                     console.log(Date.now() - lastFire)
                     fire.forEach((element) => {
-                        bot.dig(bot.blockAt(element)) //sometimes errors???
+                        bot.dig(bot.blockAt(element)).catch()
                         lastFire = Date.now()
                     })
                 }
