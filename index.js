@@ -121,15 +121,7 @@ function makeBot (_u, ix) {
                     moveToGuardPos()
                 }
             })
-            /* bot.on('blockUpdate', async (oldBlock, newBlock) => {
-                if (newBlock.name === 'fire') {
-                    if (newBlock.position.distanceTo(bot.entity.position) <= 6) {
-                        try {
-                            await bot.dig(bot.blockAt(newBlock.position))
-                        } catch (e) {}
-                    }
-                }
-            })*/
+            
             //attacking mobs in a 16 radius of the position
             bot.on('physicsTick', () => {
                 //should I handle lava here too?
@@ -194,7 +186,6 @@ function makeBot (_u, ix) {
                     console.log(Date.now() - lastFire)
                     fire.forEach((element) => {
                         bot.dig(bot.blockAt(element)).catch()
-                        lastFire = Date.now()
                     })
                 }
 
