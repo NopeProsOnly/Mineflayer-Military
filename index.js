@@ -9,7 +9,7 @@ const pvp = require('mineflayer-pvp').plugin
 const autoeat = require('mineflayer-auto-eat').plugin
 const bloodhound = require('mineflayer-bloodhound')(mineflayer)
 const vec3 = require('vec3')
-const mineflayerViewer = require('prismarine-viewer').mineflayer
+//const mineflayerViewer = require('prismarine-viewer').mineflayer
 
 const blames = [
     "That's not fair, I lagged",
@@ -60,10 +60,10 @@ function makeBot (_u, ix) {
             bot.bloodhound.yaw_correlation_enabled = true
 
 
-            bot.on('spawn', () => {
+            bot.once('spawn', () => {
                 resolve(bot)
                 accounts.push(bot.username)
-                mineflayerViewer(bot, { port: 3000 })
+                //mineflayerViewer(bot, { port: 3000 })
                 setTimeout(() => {
                     bot.chat('/register Kaden9ss Kaden9ss')
                     setTimeout(() => {
@@ -183,8 +183,8 @@ function makeBot (_u, ix) {
                     maxDistance: 6,
                 })
                 if (fire.length !== 0){
-                    fire.forEach((element) => {
-                        bot.dig(bot.blockAt(element)).catch()
+                    fire.forEach(async (element) => {
+                        await bot.dig(bot.blockAt(element)).catch(e => e) //still crashes?
                     })
                 }
 
